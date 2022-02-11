@@ -1,5 +1,6 @@
 csvfiles <- list.files(path = "Data",pattern = ".csv",full.names = TRUE)
 readLines("Data/Fake_grade_data.csv")
+list.files(path = "Data",pattern = ".csv",full.names = TRUE)
 # is a way to be able to write notes without having it show up to the right
 # <- is a way to put the code into the files to the right
 csvfiles[1]
