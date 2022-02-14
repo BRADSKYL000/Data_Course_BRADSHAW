@@ -6,6 +6,8 @@ ds
 #2
 
 library(tidyverse)
+library(tidyr)
+library(dplyr)
 
 A_states <- ds[grepl("^A", ds$Province_State),]
 A_states
@@ -20,20 +22,21 @@ A_states %>%
 
 #4
 
-df <-  ds['Province_State', 'Case_Fatality_Ratio']
-state_max_fatality_rate <- ds %>% group_by(Province_State) %>% 
-  summaraize(max= max(Case_Fatality_Ratio))
-
-state_max_fatality_rate
-
-ds %>% group_by(Province_State) %>% top_n(1,x)
-
-max(ds$Case_Fatality_Ratio)
-
-state_max_fatality_rate <- ds %>% 
+state_max_fatality_rate <- select(ds,Province_State,Case_Fatality_Ratio,Last_Update) %>% 
   group_by(Province_State) %>% 
   arrange(desc(Case_Fatality_Ratio))
 
-df
-?data.frame
-f
+state_max_fatality_rate %>% 
+pivot_wider(names_from = Province_State, 
+            values_from = Case_Fatality_Ratio,
+            values_fill = 0,
+            id_cols = Last_Update)
+
+# I was trying to use the dates in order to be able to maintain the data.
+# It was the closest that I could get
+
+#5
+
+state_max_fatality_rate %>% 
+  ggplot(aes(x=Province_State,y=Case_Fatality_Ratio)) +
+  geom_bar()
