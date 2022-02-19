@@ -22,15 +22,11 @@ A_states %>%
 
 #4
 
-state_max_fatality_rate <- select(ds,Province_State,Case_Fatality_Ratio,Last_Update) %>% 
+state_max_fatality_rate <- ds %>% 
   group_by(Province_State) %>% 
-  arrange(desc(Case_Fatality_Ratio))
+  summarize(Maximum_Fatality_Ratio = max(Case_Fatality_Ratio,na.rm = TRUE)) %>% 
+  arrange(desc(Maximum_Fatality_Ratio))
 
-state_max_fatality_rate %>% 
-pivot_wider(names_from = Province_State, 
-            values_from = Case_Fatality_Ratio,
-            values_fill = 0,
-            id_cols = Last_Update)
 
 # I was trying to use the dates in order to be able to maintain the data.
 # It was the closest that I could get
@@ -38,5 +34,19 @@ pivot_wider(names_from = Province_State,
 #5
 
 state_max_fatality_rate %>% 
-  ggplot(aes(x=Province_State,y=Case_Fatality_Ratio)) +
-  geom_bar()
+  mutate(orderedstate = factor(Province_State,levels = Province_State)) %>% 
+  ggplot(aes(x = orderedstate, y = Maximum_Fatality_Ratio)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 90,hjust = 1))
+
+
+#Extra
+
+ds %>% 
+  group_by(Last_Update) %>% 
+  summarize(cumulativedeath = sum(Deaths)) %>% 
+  ggplot(aes(x = Last_Update, y = cumulativedeath)) +
+  geom_point()
+
+#the rest of the material went by too quick on 2/17 or Week6_Day2
+# it should be good now 2/19
