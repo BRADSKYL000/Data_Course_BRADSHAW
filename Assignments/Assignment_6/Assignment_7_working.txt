@@ -1,0 +1,20 @@
+library(tidyr)
+library(dplyr)
+
+# notes
+# there is an iata cfolumn in both the airpors and JS files
+
+
+file.choose()
+airlines <- read.csv("./Assignments/Assignment_7/airlines.csv")
+airports <- read.csv("./Assignments/Assignment_7/airports.csv")
+JF <- read.csv("./Assignments/Assignment_7/jan_flights.csv") #january flights
+JS <- read.csv("./Assignments/Assignment_7/Jan_snowfall.csv") #january snowfall
+
+JF1 <- unite(JF, "Date", YEAR, MONTH, DAY, sep = "-") %>% 
+  select(Date,AIRLINE,FLIGHT_NUMBER,ORIGIN_AIRPORT,DESTINATION_AIRPORT,ARRIVAL_DELAY,WEATHER_DELAY)
+
+port1 <- airports %>% select(-COUNTRY,-LATITUDE,-LONGITUDE) 
+colnames(port1)[colnames(port1) == "IATA_CODE"] <- "iata"
+
+x <- full_join(JF1,JS, by = "Date", )

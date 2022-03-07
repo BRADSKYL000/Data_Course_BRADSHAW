@@ -1,0 +1,64 @@
+
+#Plot average departure delays by state over time
+
+######################################
+y %>% 
+  ggplot(aes(x=Date,y=DEPARTURE_DELAY)) +
+  geom_col() +
+  facet_wrap(~STATE,scales = "free") +
+  theme(axis.text.x = element_text(angle = 90,hjust = 1))
+#########################################
+
+#Plot average departure delays by airline over time
+
+#############################################################
+y  %>% 
+  group_by(AIRLINE) %>%  
+  summarise(AverageDelay = mean(DEPARTURE_DELAY,na.rm = TRUE), Date) %>% 
+  ggplot(aes(x=Date,y=AverageDelay)) +
+  geom_col() +
+  facet_wrap(~AIRLINE) +
+  theme(axis.text.x = element_text(angle = 90,hjust = 1))
+############################################################
+
+#Plot effect of snowfall on departure and arrival delays
+
+#############################################################
+#I kept running into problems with the system running too slow here.
+x %>% 
+  ggplot(aes(x=DEPARTURE_DELAY,y=snow_precip_cm)) +
+  geom_point()
+#############################################################
+
+
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+# notes
+# there is an iata column in both the airpors and JS files
+
+
+file.choose()# to find the file
+airlines <- read_csv("./Assignments/Assignment_7/airlines.csv")
+airports <- read_csv("./Assignments/Assignment_7/airports.csv")
+JF <- read_csv("./Assignments/Assignment_7/jan_flights.csv") #january flights
+JS <- read_csv("./Assignments/Assignment_7/Jan_snowfall.csv") #january snowfall
+
+JF1 <- JF %>% 
+  mutate(Date = make_date(JF$YEAR,JF$MONTH,JF$DAY)) %>% 
+  select(Date,AIRLINE,ORIGIN_AIRPORT,DESTINATION_AIRPORT,ARRIVAL_DELAY,DEPARTURE_DELAY) 
+
+#Check that the origin_airport works fresh, it might need a different select name
+colnames(airports)[colnames(airports) == "IATA_CODE"] <- "ORIGIN_AIRPORT"
+port1 <- airports %>% 
+  select(ORIGIN_AIRPORT,STATE) 
+colnames(JS)[colnames(JS) == "iata"] <- "ORIGIN_AIRPORT"
+
+
+# note the states listed are for the origin airport,
+# if a switch is needed then we change the name for the landing airport
+y <- full_join(JF1,port1, by = "ORIGIN_AIRPORT")
+
+x <- full_join(JF1,JS, by = "Date")
+
+memory.limit(size = 48903)

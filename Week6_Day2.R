@@ -60,7 +60,7 @@ select()
 
 # to filter out data from just the year 2000 and where cases are greater
 # than 3000
-
+table1
 table1 %>% 
   filter(year == 2000 & cases > 3000) %>% 
   select(-year) %>% 
