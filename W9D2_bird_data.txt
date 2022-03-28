@@ -1,0 +1,21 @@
+# A tibble: 4 x 5
+  term        estimate std.error statistic p.value
+  <chr>          <dbl>     <dbl>     <dbl>   <dbl>
+1 (Intercept)  1.64     0.0138     118.      0    
+2 egg_mass     0.00925  0.000156    59.5     0    
+3 sexmale      0.0112   0.0187       0.600   0.548
+4 sexunsexed  -0.0332   0.0273      -1.22    0.224
+# A tibble: 4 x 5
+  term        estimate std.error statistic p.value
+  <chr>          <dbl>     <dbl>     <dbl>   <dbl>
+1 (Intercept)  1.64     0.0138     118.      0    
+2 egg_mass     0.00925  0.000156    59.5     0    
+3 sexmale      0.0112   0.0187       0.600   0.548
+4 sexunsexed  -0.0332   0.0273      -1.22    0.224
+We fitted a linear model (estimated using ML) to predict mass with egg_mass and sex (formula: log10(mass) ~ egg_mass + sex). The model's explanatory power is very weak (R2 = -0.03). The model's intercept, corresponding to egg_mass = 0 and sex = female, is at 1.64 (95% CI [1.61, 1.66], t(4738) = 118.27, p < .001). Within this model:
+
+  - The effect of egg mass is statistically significant and positive (beta = 9.25e-03, 95% CI [8.95e-03, 9.56e-03], t(4738) = 59.45, p < .001; Std. beta = 0.10, 95% CI [0.10, 0.10])
+  - The effect of sex [male] is statistically non-significant and positive (beta = 0.01, 95% CI [-0.03, 0.05], t(4738) = 0.60, p = 0.548; Std. beta = 2.27e-03, 95% CI [-8.33e-04, 5.37e-03])
+  - The effect of sex [unsexed] is statistically non-significant and negative (beta = -0.03, 95% CI [-0.09, 0.02], t(4738) = -1.22, p = 0.224; Std. beta = 1.14e-03, 95% CI [-3.38e-03, 5.67e-03])
+
+Standardized parameters were obtained by fitting the model on a standardized version of the dataset. 95% Confidence Intervals (CIs) and p-values were computed using 
