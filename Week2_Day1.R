@@ -1,4 +1,4 @@
-txt_files <- list.files(path = "Data",
+otxt_files <- list.files(path = "Data",
                         pattern = ".txt",
                         full.names = TRUE,
                         recursive = TRUE)

@@ -1,0 +1,91 @@
+---
+title: "3rd Skills Test Submittion"
+author: "Kyle Bradshaw"
+date: '2022-04-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages used
+```{r}
+library(tidyverse)
+library(modelr)
+library(easystats)
+library(broom)
+```
+After loading the packages we open and do a quick analysis and cleaning of the data set.
+```{r}
+ds <- read_csv("../../BIOL3100_Exams-master/Exam_3/FacultySalaries_1995.csv")
+
+ds <- ds %>% 
+  select(State,Tier,AvgFullProfSalary,AvgAssocProfSalary,AvgAssistProfSalary)
+
+ds <- ds[c(1:1154,1156:1161),]
+
+ds <- ds %>% 
+  pivot_longer(starts_with("Avg"),names_to = "rank",
+             values_to = "Salary", names_prefix = "Avg")
+
+ds <- ds %>% mutate(Rank = case_when(`rank` == "FullProfSalary" ~ "Full",
+                              `rank` == "AssocProfSalary" ~ "Assoc",
+                              `rank` == "AssistProfSalary" ~ "Assist")) %>% 
+                               select(State,Tier,Rank,Salary)
+```
+## Questions 1 & 2
+
+Then it is a simple box plot that is needed to illustrate the salaries by rank and tier.
+
+```{r}
+ds %>% 
+  ggplot(aes(y=Salary,x=Tier,fill=Rank)) +
+  geom_boxplot()
+```
+
+Then you can run an anova test to verify what we are seeing that tier and rank are related to your salary.
+
+```{r}
+dsa <- lm(Salary~State+Tier+Rank,data=ds)
+
+ anova(dsa)
+```
+
+## Questions 3,4, & 5
+
+The new dataset is then called and cleaned
+
+```{r}
+ds2 <- read_csv("../../BIOL3100_Exams-master/Exam_3/Juniper_Oils.csv")
+ 
+ds2 <- ds2 %>% 
+  pivot_longer(cols = c("alpha-pinene","para-cymene","alpha-terpineol",
+                        "cedr-9-ene","alpha-cedrene","beta-cedrene",
+                        "cis-thujopsene","alpha-himachalene","beta-chamigrene",
+                        "cuparene","compound 1","alpha-chamigrene","widdrol",
+                        "cedrol","beta-acorenol","alpha-acorenol",
+                        "gamma-eudesmol","beta-eudesmol","alpha-eudesmol",
+                        "cedr-8-en-13-ol","cedr-8-en-15-ol","compound 2",
+                        "thujopsenal"),names_to = "ChemicalID",values_to = "Concentration") %>% 
+  select(YearsSinceBurn,ChemicalID,Concentration)
+```
+Then you can make a facet wrap of the different chemical concentrations against years past.
+```{r}
+ds2 %>% 
+  ggplot(aes(x=YearsSinceBurn,y=Concentration,)) +
+  geom_smooth() +
+  facet_wrap(~ChemicalID, scales = "free")
+```
+
+And like the last dataset, you run some statistical analysis to formulate the significant values found in the data.
+
+```{r}
+ds2a <- glm(Concentration~ChemicalID,data = ds2)
+
+ds2b <- tidy(ds2a)
+
+ds2c <- ds2b[c(which(ds2b$p.value <= 0.05)),]
+
+ds2c
+```
