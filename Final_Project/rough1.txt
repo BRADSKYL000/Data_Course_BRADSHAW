@@ -1,0 +1,14 @@
+library(ggmap)
+library(rstudioapi)
+
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv')
+
+substation <- stations[which(stations$STATE == 'UT'),]
+
+UTmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =40.3958),
+                             zoom = 8,
+                             maptype = 'terrain',
+                             color = 'color')) +
+geom_point(data = substation, aes(x=LONGITUDE,y=LATITUDE), color = "red", size = .5)
+
+print(UTmap)
