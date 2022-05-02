@@ -20,13 +20,18 @@ library(ggmap)
 library(rstudioapi)
 library(tidyverse)
 library(geosphere)
+library(jpeg)
+library(grid)
 ```
 
 ## Alternative Fuel Types
 
 In recent, unleaded cars are becoming less beneficial politically, environmentally, and economically. Starting research and development on several different types of fuel alternatives. We are all familiar with gasoline and electric cars but there are a few others. A datasheet taken from "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv" shows all public and private fueling stations for several different fuel types across the whole country. Below I have taken the information and formatted it for use here in the Utah area. Below is an example of how I filtered out the public compressed natural gas stations in Utah. This is then repeated for all the alternative stations.
 
-
+```{r}
+img <- readJPEG("FuelTypes.jpg")
+grid.raster(img)
+```
 
 ```{r, include=FALSE}
 stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv')
@@ -74,20 +79,12 @@ UCDF
 ```
 
 This is the data set for compressed natural gas in Utah
-```{r, include=FALSE}
-register_google(key = "AIzaSyCv8INptsfW-5J2qv2WAQBkbpEbE0233z4")
-```
+
 ## Compressed Natural Gas Stations
-
+## #
 ```{r}
-UTCmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
-                              zoom = 7,
-                              maptype = 'terrain',
-                              color = 'color')) +
-  geom_point(data = UCDF, aes(x=UCNGS.LONGITUDE,y=UCNGS.LATITUDE), 
-             color = ifelse(UCDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
-
-print(UTCmap)
+img1 <- readJPEG("UTCmap.jpeg")
+grid.raster(img1)
 ```
 
 This is a image of the locations of compressed natural gas stations. Stations more than 100 miles apart are displayed as red.
@@ -121,15 +118,8 @@ for(i in 1:length(UEDF$closest)){
 UEDF$nearest_dist_m <- nearest_distE
 
 #Map of electric stations
-
-UTEmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
-                              zoom = 7,
-                              maptype = 'terrain',
-                              color = 'color')) +
-  geom_point(data = UEDF, aes(x=UELECS.LONGITUDE,y=UELECS.LATITUDE), 
-             color = ifelse(UEDF$nearest_dist_m < 160934, "green", "red"), size = .5)
-
-print(UTEmap)
+img2 <- readJPEG("UTEmap.jpeg")
+grid.raster(img2)
 ```
 
 This is a image of the locations of electric charging stations. Stations more than 100 miles apart are displayed as red.
@@ -166,15 +156,8 @@ for(i in 1:length(ULDF$closest)){
 ULDF$nearest_dist_m <- nearest_distL
 
 #Map of electric stations
-
-UTLDmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
-                               zoom = 7,
-                               maptype = 'terrain',
-                               color = 'color')) +
-  geom_point(data = ULDF, aes(x=ULNGS.LONGITUDE,y=ULNGS.LATITUDE), 
-             color = ifelse(ULDF$nearest_dist_m < 160934, "green", "red"), size = 2)
-
-print(UTLDmap)
+img3 <- readJPEG("UTLDmap.jpeg")
+grid.raster(img3)
 ```
 
 This is a image of the locations of liquified natural gas stations. Stations more than 100 miles apart are displayed as red.
@@ -208,15 +191,8 @@ for(i in 1:length(ULPGDF$closest)){
 ULPGDF$nearest_dist_m <- nearest_distLPG
 
 # lpg map
-
-UTLmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
-                              zoom = 7,
-                              maptype = 'terrain',
-                              color = 'color')) +
-  geom_point(data = ULPGDF, aes(x=ULPGS.LONGITUDE,y=ULPGS.LATITUDE), 
-             color = ifelse(ULPGDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
-
-print(UTLmap)
+img3 <- readJPEG("UTLmap.jpeg")
+grid.raster(img3)
 ```
 
 This is a image of the locations of propane stations. Stations more than 100 miles apart are displayed as red.
