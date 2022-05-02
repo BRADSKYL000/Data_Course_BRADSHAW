@@ -1,11 +1,3 @@
-library(usmap)
-library(ggplot2)
-library(sf)
-library(sp)
-library(cartography)
-library(lwgeom)
-library(ggmap)
-library(rstudioapi)
 # this is my key, please don't use it. I switch between computers
 register_google(key = "AIzaSyCv8INptsfW-5J2qv2WAQBkbpEbE0233z4")
 
@@ -13,66 +5,12 @@ register_google(key = "AIzaSyCv8INptsfW-5J2qv2WAQBkbpEbE0233z4")
 # guide to the abreviations used in the dataset
 # https://afdc.energy.gov/data_download/alt_fuel_stations_format
 
-# skip over to actual code to see what I am working on, the other sections were
-# things that I was using to figure out maps but I'll delete it when I am cleaning
-# the rproj for final submission
-
-# random map code ####
-options(scipen=999)
-
-plot_usmap(regions = "counties") + 
-  labs(title = "US Counties",
-       subtitle = "This is a blank map of the counties of the United States.") + 
-  theme(panel.background = element_rect(color = "black", fill = "lightblue"))
-
-plot_usmap(data = countypov, values = "pct_pov_2014", include = c("UT", "NV", "CO", "ID", "NM","AZ", "WY"), color = "blue") + 
-  scale_fill_continuous(low = "white", high = "blue", name = "Poverty Percentage Estimates", label = scales::comma) + 
-  labs(title = "New England Region", subtitle = "Poverty Percentage Estimates for New England Counties in 2014") +
-  theme(legend.position = "right")
-
-# What was in the github ####
-# Get the Data
-
-# Read in with tidytuesdayR package 
-# Install from CRAN via: install.packages("tidytuesdayR")
-# This loads the readme and all the datasets for the week of interest
-
-# Either ISO-8601 date or year/week works!
-
-tuesdata <- tidytuesdayR::tt_load('2022-03-01')
-tuesdata <- tidytuesdayR::tt_load(2022, week = 9)
-
-stations <- tuesdata$stations
-
-# Or read in the data manually
-
-# cartography stuff that wasnt useful ####
-library(sf)
-library(cartography)
-# path to the geopackage file embedded in cartography
-path_to_gpkg <- system.file("gpkg/mtq.gpkg", package="cartography")
-# import to an sf object
-mtq <- st_read(dsn = path_to_gpkg, quiet = TRUE)
-# plot municipalities (only borders are plotted)
-plot(st_geometry(mtq), col = "grey80", border = "grey")
-# plot population
-propSymbolsLayer(
-  x = mtq, 
-  var = "POP", 
-  inches = 0.25, 
-  col = "brown4",
-  legend.pos = "topright",  
-  legend.title.txt = "Total population"
-)
-# layout
-layoutLayer(title = "Population Distribution in Martinique",
-            sources = "Sources: Insee and IGN, 2018",
-            author = paste0("cartography ", packageVersion("cartography")),
-            frame = FALSE, north = FALSE, tabtitle = TRUE)
-# north arrow
-north(pos = "topleft")
 # actual code ####
 
+library(ggplot2)
+library(geosphere)
+library(tidyverse)
+library(usmap)
 library(ggmap)
 library(rstudioapi)
 
@@ -80,119 +18,196 @@ stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 
 Ustation <- stations[which(stations$STATE == 'UT'),]
 
-UBDS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'BD'),]
+Ustation <- Ustation[which(Ustation$ACCESS_CODE == "public"),]
 
-UCNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'CNG'),]
+Ustation <- Ustation[!duplicated(Ustation$LATITUDE) & !duplicated(Ustation$LONGITUDE),]
 
+# BD information One station####
+
+UBDS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'BD'),] # only one station
+
+# ELEC information 802 stations####
 UELECS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'ELEC'),]
 
-UE85S <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'E85'),]
+UEDF <- data.frame(UELECS$LATITUDE,UELECS$LONGITUDE,site=factor(1:802))
 
-UHYS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'HY'),] # no H so don't run
+DEC <-  distm(UEDF[,c(2,1)]) %>%  as.data.frame()
 
-ULNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LNG'),]
+DEC[DEC==0] <- NA
 
-ULPGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LPG'),]
-
-UTmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =40.3958),
-                             zoom = 8,
-                             maptype = 'terrain',
-                             color = 'color')) +
-geom_point(data = Ustation, aes(x=LONGITUDE,y=LATITUDE), color = "red", size = .5)
-
-print(UTmap) # this is the map of the wasatch front, dots are stations
-
-# stuff sent by dr zahn 4/14 ####
-
-library(tidyverse)
-library(geosphere)
-
-lat <- c(40.274055397791884, 40.270633598673044,40.304545775052695,40.30449431121125,40.31322297680429,40.307921618888116)
-long <- c(-111.72627297459398, -111.72093015153435,  -111.7191187746866,  -111.69615599121808, -111.65769273421122, -111.65498132889809)
-
-df <- data.frame(lat,long,site=factor(1:6))
-
-dist(df[,1:2])
-
-dmat <- distm(df[,c(2,1)]) %>% as.data.frame()
-
-dmat[dmat==0] <- NA
-
-mindists <- apply(dmat,1,min,na.rm=TRUE)
-
-dmat
-
-mins <- c()
-x=1
-for(i in 1:length(mindists)){
-  mins[x] <- which(dmat[,i] == mindists[i])  
-  x=x+1
-}
-
-df$closest <- mins
-
-nearest_dist <- c()
-for(i in 1:length(df$closest)){
-  nearest_dist[i] <- distHaversine(df[i,c(2,1)],df[df$closest[i],c(2,1)])  
-}
-
-df$nearest_dist_m <- nearest_dist
-
-df
-
-################################ my application of it
-
-
-
-UEDF <- data.frame(UELECS$LATITUDE,UELECS$LONGITUDE,site=factor(1:910))
-
-DE <-  distm(UEDF[,c(2,1)]) %>%  as.data.frame()
-
-DE[DE==0] <- NA
-
-MEDis <- apply(DE,1,min,na.rm=TRUE)
+MEDis <- apply(DEC,1,min,na.rm=TRUE)
 
 minE <- c()
 x = 1
 for(i in 1:length(MEDis)){
-  minE[x] <- which(DE[,i] == MEDis[i])  
+  minE[x] <- which(DEC[,i] == MEDis[i])  
   x=x+1
 }
 
-# I kept running into issues and I just started reworking it sunday night.
+UEDF$closest <- minE
 
-# I got issues with the size of the electric ds for Ut being 910x910 so what
-# should I try to do there?
+nearest_distE <- c()
+for(i in 1:length(UEDF$closest)){
+  nearest_distE[i] <- distHaversine(UEDF[i,c(2,1)],UEDF[UEDF$closest[i],c(2,1)])  
+}
 
+UEDF$nearest_dist_m <- nearest_distE
 
-warnings()
-# Warning messages: #############
-1: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-2: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-3: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-4: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-5: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-6: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-7: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-8: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-9: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-10: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-11: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-12: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-13: In minE[x] <- which(DE[, i] == MEDis[i]) :
-  number of items to replace is not a multiple of replacement length
-################
+UEDF
 
-elecDF$closest <- minE
+#Map of electric stations
+
+UTEmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = UEDF, aes(x=UELECS.LONGITUDE,y=UELECS.LATITUDE), 
+             color = ifelse(UEDF$nearest_dist_m < 160934, "green", "red"), size = .5)
+
+print(UTEmap)
+
+# LNG information Two stations####
+
+ULNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LNG'),]
+
+ULDF <- data.frame(ULNGS$LATITUDE,ULNGS$LONGITUDE,site=factor(1:2))
+
+DLC <-  distm(ULDF[,c(2,1)]) %>%  as.data.frame()
+
+DLC[DLC==0] <- NA
+
+MLDis <- apply(DLC,1,min,na.rm=TRUE)
+
+minL <- c()
+x = 1
+for(i in 1:length(MLDis)){
+  minL[x] <- which(DLC[,i] == MLDis[i])  
+  x=x+1
+}
+
+ULDF$closest <- minL
+
+nearest_distL <- c()
+for(i in 1:length(ULDF$closest)){
+  nearest_distL[i] <- distHaversine(ULDF[i,c(2,1)],ULDF[ULDF$closest[i],c(2,1)])  
+}
+
+ULDF$nearest_dist_m <- nearest_distL
+
+ULDF
+
+#Map of electric stations
+
+UTLDmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                               zoom = 7,
+                               maptype = 'terrain',
+                               color = 'color')) +
+  geom_point(data = ULDF, aes(x=ULNGS.LONGITUDE,y=ULNGS.LATITUDE), 
+             color = ifelse(ULDF$nearest_dist_m < 160934, "green", "red"), size = 2)
+
+print(UTLDmap)
+
+# CNG information 27 stations####
+
+UCNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'CNG'),]
+
+UCDF <- data.frame(UCNGS$LATITUDE,UCNGS$LONGITUDE,site=factor(1:27))
+
+DC <-  distm(UCDF[,c(2,1)]) %>%  as.data.frame()
+
+DC[DC==0] <- NA
+
+MCDis <- apply(DC,1,min,na.rm=TRUE)
+
+minC <- c()
+x = 1
+for(i in 1:length(MCDis)){
+  minC[x] <- which(DC[,i] == MCDis[i])  
+  x=x+1
+}
+
+UCDF$closest <- minC
+
+nearest_distC <- c()
+for(i in 1:length(UCDF$closest)){
+  nearest_distC[i] <- distHaversine(UCDF[i,c(2,1)],UCDF[UCDF$closest[i],c(2,1)])  
+}
+
+UCDF$nearest_dist_m <- nearest_distC
+
+UCDF
+
+# cng map
+
+UTCmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = UCDF, aes(x=UCNGS.LONGITUDE,y=UCNGS.LATITUDE), 
+             color = ifelse(UCDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
+
+print(UTCmap)
+# E85 information One station ####
+
+UE85S <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'E85'),] # only one
+
+# LPG information 38 stations####
+
+ULPGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LPG'),]
+
+ULPGDF <- data.frame(ULPGS$LATITUDE,ULPGS$LONGITUDE,site=factor(1:38))
+
+DLPGC <-  distm(ULPGDF[,c(2,1)]) %>%  as.data.frame()
+
+DLPGC[DLPGC==0] <- NA
+
+MLPGDis <- apply(DLPGC,1,min,na.rm=TRUE)
+
+minLPG <- c()
+x = 1
+for(i in 1:length(MLPGDis)){
+  minLPG[x] <- which(DLPGC[,i] == MLPGDis[i])  
+  x=x+1
+}
+
+ULPGDF$closest <- minLPG
+
+nearest_distLPG <- c()
+for(i in 1:length(ULPGDF$closest)){
+  nearest_distLPG[i] <- distHaversine(ULPGDF[i,c(2,1)],ULPGDF[ULPGDF$closest[i],c(2,1)])  
+}
+
+ULPGDF$nearest_dist_m <- nearest_distLPG
+
+ULPGDF
+
+# lpg map
+
+UTLmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = ULPGDF, aes(x=ULPGS.LONGITUDE,y=ULPGS.LATITUDE), 
+             color = ifelse(ULPGDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
+
+print(UTLmap)
+# HY information NO stations####
+
+UHYS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'HY'),] # no stations
+
+# Utah map ####
+UTmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =40.3958),
+                             zoom = 8,
+                             maptype = 'terrain',
+                             color = 'color')) +
+  geom_point(data = Ustation, aes(x=LONGITUDE,y=LATITUDE), color = "red", size = .5)
+
+print(UTmap) # this is the map of the wasatch front, dots are stations
+# Utah Population map ####
+
+plot_usmap(data = countypop, regions = "counties", include = "UT", values = "pop_2015", color = "red") + 
+  scale_fill_continuous(
+    low = "white", high = "red", name = "Population (2015)", label = scales::comma
+  ) + theme(legend.position = "right") +
+  labs(title = "Utah Population by County",
+       subtitle = "2015 Census")

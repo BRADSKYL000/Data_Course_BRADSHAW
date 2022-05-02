@@ -24,21 +24,29 @@ library(geosphere)
 
 ## Alternative Fuel Types
 
-In recent, ethanol powered cars are becoming less beneficial politically, environmentally, and economically. Starting research and development on several different types of fuel alternatives. We are all familiar with gasoline and electric cars but there are a few others. A datasheet taken from "https://afdc.energy.gov/" shows all public and private fueling stations for several different fuel types across the whole country. Below I have taken the information and formatted it for use here in the Wasatch front. Is electric the only alternative to regular unleaded.
+In recent, unleaded cars are becoming less beneficial politically, environmentally, and economically. Starting research and development on several different types of fuel alternatives. We are all familiar with gasoline and electric cars but there are a few others. A datasheet taken from "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv" shows all public and private fueling stations for several different fuel types across the whole country. Below I have taken the information and formatted it for use here in the Utah area. Below is an example of how I filtered out the public compressed natural gas stations in Utah. This is then repeated for all the alternative stations.
 
-```{r, include = FALSE}
+
+
+```{r, include=FALSE}
 stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv')
+```
+
+```{r}
+
+#stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv')
 
 station <- stations[which(stations$ACCESS_CODE == 'public'),]
 
 Ustation <- station[which(station$STATE == 'UT'),]
-```
 
-```{r}
+Ustation <- Ustation[!duplicated(Ustation$LATITUDE) & !duplicated(Ustation$LONGITUDE),]
+
 # This is using the data taken on electric stations in Utah, removing duplicates
+
 UCNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'CNG'),]
 
-UCDF <- data.frame(UCNGS$LATITUDE,UCNGS$LONGITUDE,site=factor(1:28))
+UCDF <- data.frame(UCNGS$LATITUDE,UCNGS$LONGITUDE,site=factor(1:27))
 
 DC <-  distm(UCDF[,c(2,1)]) %>%  as.data.frame()
 
@@ -65,12 +73,161 @@ UCDF$nearest_dist_m <- nearest_distC
 UCDF
 ```
 
-## Including Plots
+This is the data set for compressed natural gas in Utah
+```{r, include=FALSE}
+register_google(key = "AIzaSyCv8INptsfW-5J2qv2WAQBkbpEbE0233z4")
+```
+## Compressed Natural Gas Stations
 
-You can also embed plots, for example:
+```{r}
+UTCmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = UCDF, aes(x=UCNGS.LONGITUDE,y=UCNGS.LATITUDE), 
+             color = ifelse(UCDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+print(UTCmap)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+This is a image of the locations of compressed natural gas stations. Stations more than 100 miles apart are displayed as red.
+
+## Electric Charging Stations
+```{r}
+UELECS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'ELEC'),]
+
+UEDF <- data.frame(UELECS$LATITUDE,UELECS$LONGITUDE,site=factor(1:802))
+
+DEC <-  distm(UEDF[,c(2,1)]) %>%  as.data.frame()
+
+DEC[DEC==0] <- NA
+
+MEDis <- apply(DEC,1,min,na.rm=TRUE)
+
+minE <- c()
+x = 1
+for(i in 1:length(MEDis)){
+  minE[x] <- which(DEC[,i] == MEDis[i])  
+  x=x+1
+}
+
+UEDF$closest <- minE
+
+nearest_distE <- c()
+for(i in 1:length(UEDF$closest)){
+  nearest_distE[i] <- distHaversine(UEDF[i,c(2,1)],UEDF[UEDF$closest[i],c(2,1)])  
+}
+
+UEDF$nearest_dist_m <- nearest_distE
+
+#Map of electric stations
+
+UTEmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = UEDF, aes(x=UELECS.LONGITUDE,y=UELECS.LATITUDE), 
+             color = ifelse(UEDF$nearest_dist_m < 160934, "green", "red"), size = .5)
+
+print(UTEmap)
+```
+
+This is a image of the locations of electric charging stations. Stations more than 100 miles apart are displayed as red.
+
+
+## Liquified Natural Gas Stations
+```{r}
+# LNG information Two stations####
+
+ULNGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LNG'),]
+
+ULDF <- data.frame(ULNGS$LATITUDE,ULNGS$LONGITUDE,site=factor(1:2))
+
+DLC <-  distm(ULDF[,c(2,1)]) %>%  as.data.frame()
+
+DLC[DLC==0] <- NA
+
+MLDis <- apply(DLC,1,min,na.rm=TRUE)
+
+minL <- c()
+x = 1
+for(i in 1:length(MLDis)){
+  minL[x] <- which(DLC[,i] == MLDis[i])  
+  x=x+1
+}
+
+ULDF$closest <- minL
+
+nearest_distL <- c()
+for(i in 1:length(ULDF$closest)){
+  nearest_distL[i] <- distHaversine(ULDF[i,c(2,1)],ULDF[ULDF$closest[i],c(2,1)])  
+}
+
+ULDF$nearest_dist_m <- nearest_distL
+
+#Map of electric stations
+
+UTLDmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                               zoom = 7,
+                               maptype = 'terrain',
+                               color = 'color')) +
+  geom_point(data = ULDF, aes(x=ULNGS.LONGITUDE,y=ULNGS.LATITUDE), 
+             color = ifelse(ULDF$nearest_dist_m < 160934, "green", "red"), size = 2)
+
+print(UTLDmap)
+```
+
+This is a image of the locations of liquified natural gas stations. Stations more than 100 miles apart are displayed as red.
+
+## Propane Stations
+```{r}
+ULPGS <- Ustation[which(Ustation$FUEL_TYPE_CODE == 'LPG'),]
+
+ULPGDF <- data.frame(ULPGS$LATITUDE,ULPGS$LONGITUDE,site=factor(1:38))
+
+DLPGC <-  distm(ULPGDF[,c(2,1)]) %>%  as.data.frame()
+
+DLPGC[DLPGC==0] <- NA
+
+MLPGDis <- apply(DLPGC,1,min,na.rm=TRUE)
+
+minLPG <- c()
+x = 1
+for(i in 1:length(MLPGDis)){
+  minLPG[x] <- which(DLPGC[,i] == MLPGDis[i])  
+  x=x+1
+}
+
+ULPGDF$closest <- minLPG
+
+nearest_distLPG <- c()
+for(i in 1:length(ULPGDF$closest)){
+  nearest_distLPG[i] <- distHaversine(ULPGDF[i,c(2,1)],ULPGDF[ULPGDF$closest[i],c(2,1)])  
+}
+
+ULPGDF$nearest_dist_m <- nearest_distLPG
+
+# lpg map
+
+UTLmap <- ggmap(get_googlemap(center = c(lon = -111.85298,lat =39.3958),
+                              zoom = 7,
+                              maptype = 'terrain',
+                              color = 'color')) +
+  geom_point(data = ULPGDF, aes(x=ULPGS.LONGITUDE,y=ULPGS.LATITUDE), 
+             color = ifelse(ULPGDF$nearest_dist_m < 160934, "green", "red"), size = 1.5)
+
+print(UTLmap)
+```
+
+This is a image of the locations of propane stations. Stations more than 100 miles apart are displayed as red.
+
+There were other stations in the dataset but there were either one or no stations of that type here in Utah
+
+One public biodiesel station in Midvale, Utah.
+One public 85% Ethanol station in Orem, Utah.
+No public Hydrogen stations were found.
+
+## Conclusions
+
+Much like any argument for fuel alternatives, ease of access is one of the main issues. We find that there are more electric charging stations all across the state with 802 public stations, more if we include the duplicates. As it stands I would use an electric vehicle as a commuter car and for casual driving locally.
+
