@@ -1,5 +1,4 @@
-# this is my key, please don't use it. I switch between computers
-register_google(key = "AIzaSyCv8INptsfW-5J2qv2WAQBkbpEbE0233z4")
+
 
 
 # guide to the abreviations used in the dataset
